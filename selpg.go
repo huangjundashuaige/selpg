@@ -6,6 +6,8 @@ import(
 	"bufio"
 	"os"
 	"errors"
+	"os/exec"
+	"io"
 )
 /*
 
@@ -16,6 +18,7 @@ set up for the pflag
 var input_start_line = flag.IntP("start","s",1,"target paragraph's start line")
 var input_end_line = flag.IntP("end","e",1,"target paragraph's end line")
 var input_page_size = flag.IntP("line","l",72,"how many line one page contain")
+var input_destination = flag.StringP("destination","d","","make sure the output can be sent to the target")
 var error_writer = bufio.NewWriterSize(os.Stderr,1024)
 
 
@@ -83,6 +86,25 @@ func check_err(err error){
 	}
 }
 
+func load_data(lpin io.WriteCloser,res string){
+
+	defer lpin.Close()
+	io.WriteString(lpin,res)
+
+}
+
+func call_go_routine(res string){
+	if(*input_destination == ""){
+		cmd := exec.Command("lp","-d"+*input_destination)
+		lpin,err :=cmd.StdinPipe()
+		if err!=nil{
+			panic(err)
+		}
+		go load_data(lpin,res)
+	}
+}
+
+
 func main(){
 	flag.Parse() 
 	/*
@@ -139,5 +161,13 @@ func main(){
 
 			fmt.Println(s)
 		}
+	}
+	if(*input_destination==""){
+		/*
+
+		redirection the output to the divice we want
+
+		*/
+		call_go_routine(output_page)
 	}
 }

@@ -1,5 +1,17 @@
 
-[TOC]
+<!-- TOC -->
+
+- [selpg](#selpg)
+    - [unix type interface](#unix-type-interface)
+    - [how exactly to using pflag](#how-exactly-to-using-pflag)
+    - [determine whether the source text comes from](#determine-whether-the-source-text-comes-from)
+    - [finally is the main pattern code](#finally-is-the-main-pattern-code)
+    - [other stuff](#other-stuff)
+    - [last function redirection the output to device like printer](#last-function-redirection-the-output-to-device-like-printer)
+    - [some test](#some-test)
+    - [simply perfect](#simply-perfect)
+
+<!-- /TOC -->
 
 # selpg
 first thing first,i aint gonna lie,this whole project was designed just for homework in the course of service computing.
@@ -8,8 +20,8 @@ i wont even learn golang if i aint took that course.but you know,everything just
 
 so lets go get them,first i am gonna intro some basic part about golang which used during the exper.then some tricky part about this problem.after that some conclusion.
 
-1. unix type interface
-+ since we want that interface not just look like someone just make it for linux daily using,but actually meets all the needs that linux wants.
+## unix type interface
+ since we want that interface not just look like someone just make it for linux daily using,but actually meets all the needs that linux wants.
 
 so we just need to using something like 
 ```
@@ -23,7 +35,7 @@ so using third-party package seems to be the best solution.
 
 there comes the pflag,but using that you can get easier to do with all the hard work instead of just busy in split the string.
 
-+ how exactly to using pflag
+## how exactly to using pflag
 
 ```
 var input_start_line = flag.IntP("start","s",1,"target paragraph's start line")
@@ -33,7 +45,7 @@ var error_writer = bufio.NewWriterSize(os.Stderr,1024)
 ```
 all you need to do its to assign all the command into the flag.
 
-2. determine whether the source text comes from
+## determine whether the source text comes from
 
 + well,by using different source of text,the best way is to desprate the api from the object like the reader.
 
@@ -43,7 +55,7 @@ file,err := os.Open(flag.Arg(flag.NArg()-1))
 ```
 
 
-3. finally is the main pattern code
+## finally is the main pattern code
 
 the main function is easy as fuck,basic just get the range of code from the source text and lead the whole text into the new target text
 ```
@@ -72,7 +84,7 @@ var output_page string
 
 so freaking easy isnt it.
 
-4. other stuff
+## other stuff
 
 + the other part of thing is that we have to deal with the error
 
@@ -109,4 +121,55 @@ func check_start_lower_end(start *int,end *int)(error){
 }
 ```
 
+## last function redirection the output to device like printer
+```
+func load_data(lpin io.WriteCloser,res string){
+
+	defer lpin.Close()
+	io.WriteString(lpin,res)
+
+}
+
+func call_go_routine(res string){
+	if(*input_destination == ""){
+		cmd := exec.Command("lp","-d"+*input_destination)
+		lpin,err :=cmd.StdinPipe()
+		if err!=nil{
+			panic(err)
+		}
+		go load_data(lpin,res)
+	}
+}
+```
+basically we call the command using ``` exec.Command ```
+by using something like this,we can get the output just like that after running this command in our machine.
+
+but foucus on this command ``` lp ``` which need the input comes from us.the stdin or somewhere we redirection to.
+
+so we using the commmand pipe to do so.
+
+## some test
+
+using each line with only the line number as a file input,
+
+we can provide some test example and to check for the result with our own.
+
+```
+1
+2
+3
+...
+1024
+```
+
+with the command like ```selpg -s1 -e2 -l 72 numbers.txt```
+and then get the result of 
+```
+1
+2
+3
+...
+71
+```
+which is exactly what i want as result.
 ## simply perfect
